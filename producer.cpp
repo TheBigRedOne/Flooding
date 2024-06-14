@@ -10,7 +10,6 @@ public:
     Producer(const ndn::Name& prefix, int dataRate)
     : m_prefix(prefix), m_dataRate(dataRate), m_face()
     {
-        // Using lambda functions to correctly bind and define the callbacks
         m_face.setInterestFilter(m_prefix,
                                  [this](const auto& filter, const auto& interest) { this->onInterest(interest); },
                                  ndn::RegisterPrefixSuccessCallback(),
@@ -27,13 +26,20 @@ public:
 
 private:
     void onInterest(const ndn::Interest& interest) {
+        // 创建一个与兴趣包名称相同的数据包
         auto data = std::make_shared<ndn::Data>(interest.getName());
+        
+        // 设置数据包的内容
         std::string content = "Hello, responding to " + interest.getName().toUri();
         data->setContent(std::string_view(content));
-
+        
+        // 签名数据包
         m_keyChain.sign(*data);
+        
+        // 发送数据包给消费者
         m_face.put(*data);
 
+        // 控制发送速率
         std::this_thread::sleep_for(std::chrono::milliseconds(1000 / m_dataRate));
     }
 
