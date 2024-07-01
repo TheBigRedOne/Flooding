@@ -1,57 +1,76 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/security/signing-helpers.hpp>
+
 #include <iostream>
-#include <memory>
 
-class Producer {
+namespace ndn {
+namespace examples {
+
+class Producer
+{
 public:
-    Producer(const ndn::Name& prefix)
-    : m_prefix(prefix), m_face()
-    {
-        m_face.setInterestFilter(m_prefix,
-                                 [this](const auto& filter, const auto& interest) { this->onInterest(interest); },
-                                 ndn::RegisterPrefixSuccessCallback(),
-                                 [this](const ndn::Name& prefix, const std::string& reason) { this->onRegisterFailed(prefix, reason); });
-    }
+  void
+  run()
+  {
+    m_face.setInterestFilter("/example/testApp/randomData",
+                             std::bind(&Producer::onInterest, this, _2),
+                             nullptr,
+                             std::bind(&Producer::onRegisterFailed, this, _1, _2));
 
-    void run() {
-        try {
-            m_face.processEvents();
-        } catch (const std::exception& e) {
-            std::cerr << "ERROR: " << e.what() << std::endl;
-        }
-    }
+    auto cert = m_keyChain.getPib().getIdentity("/example/testApp").getDefaultKey().getDefaultCertificate();
+    m_certServeHandle = m_face.setInterestFilter(security::extractIdentityFromCertName(cert.getName()),
+                                                 [this, cert] (auto&&...) {
+                                                   m_face.put(cert);
+                                                 },
+                                                 std::bind(&Producer::onRegisterFailed, this, _1, _2));
+    m_face.processEvents();
+  }
 
 private:
-    void onInterest(const ndn::Interest& interest) {
-        std::cout << "Received Interest: " << interest.getName() << std::endl;
+  void
+  onInterest(const Interest& interest)
+  {
+    std::cout << ">> I: " << interest << std::endl;
 
-        auto data = std::make_shared<ndn::Data>(interest.getName());
-        std::string content = "Hello, responding to " + interest.getName().toUri();
-        data->setContent(content);  // 使用正确的 setContent 方法
+    auto data = std::make_shared<Data>();
+    data->setName(interest.getName());
+    data->setFreshnessPeriod(10_s);
+    data->setContent("Hello, world!");
 
-        m_keyChain.sign(*data);
-        m_face.put(*data);
+    m_keyChain.sign(*data);
 
-        std::cout << "Sent Data: " << data->getName() << std::endl;
-    }
+    std::cout << "<< D: " << *data << std::endl;
+    m_face.put(*data);
+  }
 
-    void onRegisterFailed(const ndn::Name& prefix, const std::string& reason) {
-        std::cerr << "ERROR: Failed to register prefix '" << prefix << "' in local hub's daemon (" << reason << ")" << std::endl;
-        m_face.shutdown();
-    }
+  void
+  onRegisterFailed(const Name& prefix, const std::string& reason)
+  {
+    std::cerr << "ERROR: Failed to register prefix '" << prefix
+              << "' with the local forwarder (" << reason << ")\n";
+    m_face.shutdown();
+  }
 
-    ndn::Face m_face;
-    ndn::KeyChain m_keyChain;
-    ndn::Name m_prefix;
+private:
+  Face m_face;
+  KeyChain m_keyChain;
+  ScopedRegisteredPrefixHandle m_certServeHandle;
 };
 
-int main(int argc, char* argv[]) {
-    ndn::Name prefix("/example/producer");
+} // namespace examples
+} // namespace ndn
 
-    Producer producer(prefix);
-    std::cout << "Producer running for prefix " << prefix << std::endl;
+int
+main(int argc, char** argv)
+{
+  try {
+    ndn::examples::Producer producer;
     producer.run();
-
     return 0;
+  }
+  catch (const std::exception& e) {
+    std::cerr << "ERROR: " << e.what() << std::endl;
+    return 1;
+  }
 }
