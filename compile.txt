@@ -1,0 +1,2 @@
+g++ -std=c++17 -o consumer consumer.cpp $(pkg-config --cflags --libs libndn-cxx)
+g++ -std=c++17 -o producer producer.cpp $(pkg-config --cflags --libs libndn-cxx)
