@@ -1,84 +1,76 @@
+// consumer.cpp
 #include <ndn-cxx/face.hpp>
-#include <ndn-cxx/util/scheduler.hpp>
+#include <ndn-cxx/security/validator-config.hpp>
 #include <iostream>
-#include <unordered_set>
-#include <chrono>
-#include <thread>
-#include <boost/asio/io_context.hpp>
 
-class Consumer {
+namespace ndn {
+namespace examples {
+
+class Consumer
+{
 public:
-    Consumer(const ndn::Name& interestName, int maxInflightInterests, int requestIntervalMs)
-    : m_interestName(interestName), m_face(m_ioContext), m_scheduler(m_ioContext), m_maxInflightInterests(maxInflightInterests), m_requestIntervalMs(requestIntervalMs)
-    {
-        sendInterests();
-        m_scheduler.schedule(ndn::time::milliseconds(m_requestIntervalMs), [this] { this->periodicRequest(); });
-    }
+  Consumer()
+  {
+    m_validator.load("/home/m26a1pershing/mini-ndn/flooding/trust-schema.conf");
+  }
 
-    void run() {
-        try {
-            m_ioContext.run();
-        } catch (const std::exception& e) {
-            std::cerr << "ERROR: " << e.what() << std::endl;
-        }
-    }
+  void run()
+  {
+    Name interestName("/example/testApp/randomData");
+    interestName.appendVersion();
+    Interest interest(interestName);
+    interest.setMustBeFresh(true);
+    interest.setInterestLifetime(6_s); 
+
+    std::cout << "Sending Interest " << interest << std::endl;
+    m_face.expressInterest(interest,
+                           std::bind(&Consumer::onData, this,  _1, _2),
+                           std::bind(&Consumer::onNack, this, _1, _2),
+                           std::bind(&Consumer::onTimeout, this, _1));
+
+    m_face.processEvents();
+  }
 
 private:
-    void periodicRequest() {
-        sendInterests();
-        m_scheduler.schedule(ndn::time::milliseconds(m_requestIntervalMs), [this] { this->periodicRequest(); });
-    }
+  void onData(const Interest&, const Data& data)
+  {
+    std::cout << "Received Data " << data << std::endl;
+    m_validator.validate(data,
+                         [] (const Data&) {
+                           std::cout << "Data conforms to trust schema" << std::endl;
+                         },
+                         [] (const Data&, const security::ValidationError& error) {
+                           std::cout << "Error authenticating data: " << error << std::endl;
+                         });
+  }
 
-    void sendInterests() {
-        while (m_inflightInterests.size() < m_maxInflightInterests) {
-            ndn::Name nextInterestName = m_interestName;
-            nextInterestName.appendSegment(m_nextSegment++);
-            ndn::Interest interest(nextInterestName);
-            interest.setInterestLifetime(ndn::time::milliseconds(1000));
-            interest.setMustBeFresh(true);
+  void onNack(const Interest&, const lp::Nack& nack) const
+  {
+    std::cout << "Received Nack with reason " << nack.getReason() << std::endl;
+  }
 
-            std::cout << "Sending Interest for: " << nextInterestName << std::endl;
-            m_inflightInterests.insert(nextInterestName.toUri());
-            m_face.expressInterest(interest,
-                                   bind(&Consumer::onData, this, _1, _2),
-                                   bind(&Consumer::onNack, this, _1, _2),
-                                   bind(&Consumer::onTimeout, this, _1));
-        }
-    }
+  void onTimeout(const Interest& interest) const
+  {
+    std::cout << "Timeout for " << interest << std::endl;
+  }
 
-    void onData(const ndn::Interest& interest, const ndn::Data& data) {
-        std::cout << "Received data: " << data.getName() << std::endl;
-        m_inflightInterests.erase(interest.getName().toUri());
-    }
-
-    void onNack(const ndn::Interest& interest, const ndn::lp::Nack& nack) {
-        std::cout << "Received NACK for: " << interest.getName() << " reason: " << nack.getReason() << std::endl;
-        m_inflightInterests.erase(interest.getName().toUri());
-    }
-
-    void onTimeout(const ndn::Interest& interest) {
-        std::cout << "Timeout for Interest: " << interest.getName() << std::endl;
-        m_inflightInterests.erase(interest.getName().toUri());
-    }
-
-    boost::asio::io_context m_ioContext;
-    ndn::Face m_face;
-    ndn::Scheduler m_scheduler{m_ioContext};
-    ndn::Name m_interestName;
-    uint64_t m_nextSegment = 0;
-    int m_maxInflightInterests;
-    int m_requestIntervalMs;
-    std::unordered_set<std::string> m_inflightInterests;
+private:
+  Face m_face;
+  ValidatorConfig m_validator{m_face};
 };
 
-int main(int argc, char* argv[]) {
-    ndn::Name interestName("/example/producer");
-    int maxInflightInterests = 5;
-    int requestIntervalMs = 5;
+} // namespace examples
+} // namespace ndn
 
-    Consumer consumer(interestName, maxInflightInterests, requestIntervalMs);
-    std::cout << "Consumer running, requesting data from " << interestName << std::endl;
+int main(int argc, char** argv)
+{
+  try {
+    ndn::examples::Consumer consumer;
     consumer.run();
-
     return 0;
+  }
+  catch (const std::exception& e) {
+    std::cerr << "ERROR: " << e.what() << std::endl;
+    return 1;
+  }
 }
