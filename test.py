@@ -37,8 +37,8 @@ if __name__ == '__main__':
     consumer = ndn.net['consumer']
 
     # 启动生产者和消费者应用程序
-    producer.cmd("/home/m26a1pershing/mini-ndn/flooding/producer &> /home/m26a1pershing/mini-ndn/flooding/producer.log &")
-    consumer.cmd("/home/m26a1pershing/mini-ndn/flooding/consumer &> /home/m26a1pershing/mini-ndn/flooding/consumer.log &")
+    producer.cmd("/home/vagrant/mini-ndn/flooding/producer &> /home/vagrant/mini-ndn/flooding/producer.log &")
+    consumer.cmd("/home/vagrant/mini-ndn/flooding/consumer &> /home/vagrant/mini-ndn/flooding/consumer.log &")
 
     MiniNDNCLI(ndn.net)
     ndn.stop()
