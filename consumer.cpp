@@ -11,7 +11,7 @@ class Consumer
 public:
   Consumer()
   {
-    m_validator.load("/home/m26a1pershing/mini-ndn/flooding/trust-schema.conf");
+    m_validator.load("/home/vagrant/mini-ndn/flooding/trust-schema.conf");
   }
 
   void run()
