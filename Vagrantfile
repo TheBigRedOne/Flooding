@@ -4,7 +4,7 @@
 $INSTALL_BASE = <<EOF
   sudo apt-get update
   sudo apt-get upgrade -y
-  sudo apt-get install -y vim git build-essential python3-pip ubuntu-desktop
+  sudo apt-get install -y vim git build-essential ubuntu-desktop pkg-config python3-pip libndn-cxx-dev
   sudo pip3 install --upgrade pip
 
   #Clone and install mini-ndn
