@@ -3,7 +3,7 @@ VAGRANTFILE = Vagrantfile
 
 # Vagrant虚拟机启动
 start-vagrant:
-	vagrant up
+	vagrant up --provider virtualbox
 
 # 编译consumer.cpp
 compile-consumer:
