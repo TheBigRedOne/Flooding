@@ -4,8 +4,16 @@
 $INSTALL_BASE = <<EOF
   sudo apt-get update
   sudo apt-get upgrade -y
-  sudo apt-get install -y vim git build-essential ubuntu-desktop pkg-config python3-pip libndn-cxx-dev
+  sudo apt-get install -y vim git build-essential ubuntu-desktop python3-pip
   sudo pip3 install --upgrade pip
+
+  # Clone and install ndn-cxx from source
+  git clone https://github.com/named-data/ndn-cxx.git /home/vagrant/ndn-cxx
+  cd /home/vagrant/ndn-cxx
+  ./waf configure
+  ./waf build
+  sudo ./waf install
+  sudo ldconfig
 
   #Clone and install mini-ndn
   git clone --branch v0.6.0 https://github.com/named-data/mini-ndn.git /home/vagrant/mini-ndn
