@@ -4,7 +4,7 @@
 $INSTALL_BASE = <<EOF
   sudo apt-get update
   sudo apt-get upgrade -y
-  sudo apt-get install -y vim git build-essential ubuntu-desktop python3-pip
+  sudo apt-get install -y vim git ubuntu-desktop build-essential pkg-config python3-minimal libboost-all-dev libssl-dev libsqlite3-dev libpcap-dev libsystemd-dev
   sudo pip3 install --upgrade pip
 
   # Clone and install ndn-cxx from source
@@ -44,7 +44,7 @@ Vagrant.configure("2") do |config|
     
   end
 
-  config.vm.provision "shell", inline: $INSTALL_BASE, privileged: true
+  config.vm.provision "shell", inline: $INSTALL_BASE, privileged: false
   config.vm.provision "shell", inline: $DOWNLOAD_FILES, privileged: false
 
   config.vm.provider "virtualbox" do |vb|
