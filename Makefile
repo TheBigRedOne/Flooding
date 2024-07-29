@@ -16,7 +16,7 @@ compile-producer: start-vagrant
 	g++ -std=c++17 -o producer producer.cpp $$(pkg-config --cflags --libs libndn-cxx)"
 
 # 运行trust_anchor_generator.txt中的命令
-generate-keys: compile-consumer compile-producer
+generate-keys: start-vagrant
 	vagrant ssh -c "cd /home/vagrant/mini-ndn/flooding && \
 	ndnsec key-gen /example && \
 	ndnsec cert-dump -i /example > example-trust-anchor.cert && \
@@ -24,7 +24,7 @@ generate-keys: compile-consumer compile-producer
 	ndnsec sign-req /example/testApp | ndnsec cert-gen -s /example -i example | ndnsec cert-install -"
 
 # 运行实验脚本test.py
-run-test: generate-keys
+run-test: compile-consumer compile-producer generate-keys
 	vagrant ssh -c "cd /home/vagrant/mini-ndn/flooding && sudo python3 test.py"
 
 # 复制结果文件
@@ -38,8 +38,8 @@ stop-vagrant: copy-results
 	vagrant halt
 
 # 清理Vagrant虚拟机
-clean-vagrant:
-	vagrant destroy -f
+#clean-vagrant:
+#	vagrant destroy -f
 
 # 运行所有步骤
 all: stop-vagrant
