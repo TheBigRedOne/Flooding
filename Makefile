@@ -7,13 +7,13 @@ start-vagrant:
 
 # 编译consumer.cpp
 compile-consumer: start-vagrant
-	vagrant ssh -c "cd /home/vagrant/mini-ndn/flooding && \
-	g++ -std=c++17 -o consumer consumer.cpp $$(pkg-config --cflags --libs libndn-cxx)"
+	vagrant ssh -c 'cd /home/vagrant/mini-ndn/flooding && \
+	g++ -std=c++17 -o consumer consumer.cpp $$(pkg-config --cflags --libs libndn-cxx)'
 
 # 编译producer.cpp
 compile-producer: start-vagrant
-	vagrant ssh -c "cd /home/vagrant/mini-ndn/flooding && \
-	g++ -std=c++17 -o producer producer.cpp $$(pkg-config --cflags --libs libndn-cxx)"
+	vagrant ssh -c 'cd /home/vagrant/mini-ndn/flooding && \
+	g++ -std=c++17 -o producer producer.cpp $$(pkg-config --cflags --libs libndn-cxx)'
 
 # 运行trust_anchor_generator.txt中的命令
 generate-keys: start-vagrant
