@@ -20,12 +20,8 @@ $(CONSUMER): $(CONSUMER_SRC)
 $(PRODUCER): $(PRODUCER_SRC)
 	$(CXX) $(CXXFLAGS) -o $(PRODUCER) $(PRODUCER_SRC)
 
-# Phony targets
-.PHONY: all clean
-
 # Build all
 all: $(CONSUMER) $(PRODUCER)
 
 # Clean build artifacts
-clean:
-	rm -f $(CONSUMER) $(PRODUCER)
+clean: rm -f $(CONSUMER) $(PRODUCER)
