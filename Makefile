@@ -24,7 +24,7 @@ generate-keys:
 
 # 运行实验脚本 test.py
 run-test:
-	vagrant ssh -c 'cd /home/vagrant/mini-ndn/flooding && sudo python3 test.py'
+	vagrant ssh -c 'cd /home/vagrant/mini-ndn/flooding && sudo python test.py'
 
 # 退出 Mini-NDN
 quit-minindn: 
