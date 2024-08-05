@@ -4,7 +4,7 @@
 VAGRANTFILE = Vagrantfile
 APP_DIR = /home/vagrant/mini-ndn/flooding/Applications
 RESULTS_DIR = results
-EXTERNAL_RESULTS_DIR = ../results
+EXTERNAL_RESULTS_DIR = results
 
 # 启动 Vagrant 虚拟机
 start-vagrant:
