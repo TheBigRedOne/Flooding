@@ -42,7 +42,7 @@ stop-vagrant: copy-results
 	vagrant halt
 
 # 清理 Vagrant 虚拟机
-clean-vagrant: clean-vagrant
+clean-vagrant: stop-vagrant
 	vagrant destroy -f
 
 # 运行所有步骤
