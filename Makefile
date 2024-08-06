@@ -38,7 +38,7 @@ copy-results: quit-minindn
 	cp $(RESULTS_DIR)/*.log $(EXTERNAL_RESULTS_DIR)/
 
 # 停止 Vagrant 虚拟机
-stop-vagrant:
+stop-vagrant: copy-results
 	vagrant halt
 
 # 清理 Vagrant 虚拟机
@@ -46,6 +46,4 @@ clean-vagrant: clean-vagrant
 	vagrant destroy -f
 
 # 运行所有步骤
-all:
-	$(MAKE) copy-results
-	$(MAKE) clean-vagrant
+all: clean-vagrant
