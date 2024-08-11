@@ -2,6 +2,7 @@
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <iostream>
+#include <cstdlib> // for std::system
 
 namespace ndn {
 namespace examples {
@@ -9,10 +10,11 @@ namespace examples {
 class Producer
 {
 public:
-  void
-  run()
+  void run()
   {
-    // Register the producer's prefix to match consumer's interest
+    // Automatically advertise prefix using system call
+    std::system("nlsrc advertise /example/testApp");
+
     m_face.setInterestFilter("/example/testApp/randomData",
                              std::bind(&Producer::onInterest, this, std::placeholders::_2),
                              nullptr,
@@ -23,15 +25,14 @@ public:
   }
 
 private:
-  void
-  onInterest(const Interest& interest)
+  void onInterest(const Interest& interest)
   {
     std::cout << ">> I: " << interest << std::endl;
 
     auto data = std::make_shared<Data>();
     data->setName(interest.getName());
     data->setFreshnessPeriod(10_s);
-    
+
     // Set content
     const std::string content = "Hello, world!";
     data->setContent(makeStringBlock(tlv::Content, content));
@@ -43,8 +44,7 @@ private:
     m_face.put(*data);
   }
 
-  void
-  onRegisterFailed(const Name& prefix, const std::string& reason)
+  void onRegisterFailed(const Name& prefix, const std::string& reason)
   {
     std::cerr << "ERROR: Failed to register prefix '" << prefix
               << "' with the local forwarder (" << reason << ")\n";
@@ -59,8 +59,7 @@ private:
 } // namespace examples
 } // namespace ndn
 
-int
-main(int argc, char** argv)
+int main(int argc, char** argv)
 {
   try {
     ndn::examples::Producer producer;
