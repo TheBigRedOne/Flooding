@@ -1,6 +1,6 @@
-// consumer.cpp
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/validator-config.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 #include <iostream>
 
 namespace ndn {
@@ -10,11 +10,19 @@ class Consumer
 {
 public:
   Consumer()
+    : m_scheduler(m_face.getIoService())
   {
     m_validator.load("/home/vagrant/mini-ndn/flooding/trust-schema.conf");
   }
 
   void run()
+  {
+    sendInterest();
+    m_face.processEvents();
+  }
+
+private:
+  void sendInterest()
   {
     Name interestName("/example/testApp/randomData");
     interestName.appendVersion();
@@ -24,14 +32,14 @@ public:
 
     std::cout << "Sending Interest " << interest << std::endl;
     m_face.expressInterest(interest,
-                           std::bind(&Consumer::onData, this,  _1, _2),
-                           std::bind(&Consumer::onNack, this, _1, _2),
-                           std::bind(&Consumer::onTimeout, this, _1));
+                           std::bind(&Consumer::onData, this, std::placeholders::_1, std::placeholders::_2),
+                           std::bind(&Consumer::onNack, this, std::placeholders::_1, std::placeholders::_2),
+                           std::bind(&Consumer::onTimeout, this, std::placeholders::_1));
 
-    m_face.processEvents();
+    // Schedule the next interest
+    m_scheduler.schedule(ndn::time::milliseconds(10), [this] { sendInterest(); });
   }
 
-private:
   void onData(const Interest&, const Data& data)
   {
     std::cout << "Received Data " << data << std::endl;
@@ -57,6 +65,7 @@ private:
 private:
   Face m_face;
   ValidatorConfig m_validator{m_face};
+  Scheduler m_scheduler;
 };
 
 } // namespace examples
