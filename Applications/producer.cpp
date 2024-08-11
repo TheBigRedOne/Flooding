@@ -1,7 +1,6 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/security/signing-helpers.hpp>
-
 #include <iostream>
 
 namespace ndn {
@@ -13,17 +12,13 @@ public:
   void
   run()
   {
+    // Register the producer's prefix to match consumer's interest
     m_face.setInterestFilter("/example/testApp/randomData",
-                             std::bind(&Producer::onInterest, this, _2),
+                             std::bind(&Producer::onInterest, this, std::placeholders::_2),
                              nullptr,
-                             std::bind(&Producer::onRegisterFailed, this, _1, _2));
+                             std::bind(&Producer::onRegisterFailed, this, std::placeholders::_1, std::placeholders::_2));
 
-    auto cert = m_keyChain.getPib().getIdentity("/example/testApp").getDefaultKey().getDefaultCertificate();
-    m_certServeHandle = m_face.setInterestFilter(security::extractIdentityFromCertName(cert.getName()),
-                                                 [this, cert] (auto&&...) {
-                                                   m_face.put(cert);
-                                                 },
-                                                 std::bind(&Producer::onRegisterFailed, this, _1, _2));
+    std::cout << "Producer running, waiting for Interests...\n";
     m_face.processEvents();
   }
 
@@ -36,8 +31,12 @@ private:
     auto data = std::make_shared<Data>();
     data->setName(interest.getName());
     data->setFreshnessPeriod(10_s);
-    data->setContent("Hello, world!");
+    
+    // Set content
+    const std::string content = "Hello, world!";
+    data->setContent(makeStringBlock(tlv::Content, content));
 
+    // Sign the data using default key
     m_keyChain.sign(*data);
 
     std::cout << "<< D: " << *data << std::endl;
@@ -54,8 +53,7 @@ private:
 
 private:
   Face m_face;
-  KeyChain m_keyChain;
-  ScopedRegisteredPrefixHandle m_certServeHandle;
+  KeyChain m_keyChain; // Add KeyChain for signing
 };
 
 } // namespace examples
